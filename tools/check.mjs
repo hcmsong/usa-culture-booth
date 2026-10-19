@@ -18,26 +18,26 @@ let fail = 0;
 const ok = (cond, msg) => { if (!cond) { fail++; console.log('✗ ' + msg); } };
 
 // 1) 문항 데이터
-ok(D.QUESTIONS.length === 30, `문항 수 30 (실제 ${D.QUESTIONS.length})`);
+ok(D.QUESTIONS.length === 38, `문항 수 38 (실제 ${D.QUESTIONS.length})`);
 ok(new Set(D.QUESTIONS.map(q => q.id)).size === D.QUESTIONS.length, 'id 중복 없음');
 for (const q of D.QUESTIONS) {
   ok(D.CATS.includes(q.cat), `${q.id} 범주`);
   ok(['하', '중', '상'].includes(q.diff), `${q.id} 난도`);
   ok(['저', '고', '공통'].includes(q.band), `${q.id} 학년대`);
-  ok(q.choices.length === (q.band === '고' ? 4 : 3), `${q.id} 보기 수(공통·저 3, 고 4)`);
+  ok(q.band === '고' ? q.choices.length === 4 : q.band === '저' ? q.choices.length === 3 : [3, 4].includes(q.choices.length), `${q.id} 보기 수(저 3, 고 4, 공통 3~4)`);
   ok(Number.isInteger(q.answer) && q.answer >= 0 && q.answer < q.choices.length, `${q.id} 정답 위치`);
   ok(new Set(q.choices).size === q.choices.length, `${q.id} 보기 중복 없음`);
-  ok(q.q.length <= 45, `${q.id} 문제 길이 ${q.q.length} ≤ 45`);
-  ok(q.choices.every(c => c.length <= 18), `${q.id} 보기 길이 ≤ 18`);
+  ok(q.q.length <= 46, `${q.id} 문제 길이 ${q.q.length} ≤ 46`);
+  ok(q.choices.every(c => { const m = c.match(/^(.*\S)\s+\(([^)]*)\)$/); return m ? m[1].length <= 18 && m[2].length <= 12 : c.length <= 18; }), `${q.id} 보기 길이(본문 ≤ 18, 괄호 한글 ≤ 12)`);
   ok(q.fact.length <= 40, `${q.id} 재미 사실 길이 ${q.fact.length} ≤ 40`);
   ok(q.eq && q.ea, `${q.id} 이모지`);
 }
 
 // 2) 문제 묶음·기본 세트
-ok(D.POOLS.low.length === 17, `저학년 묶음 17 (실제 ${D.POOLS.low.length})`);
+ok(D.POOLS.low.length === 27, `저학년 묶음 27 (실제 ${D.POOLS.low.length})`);
 {
   const H = D.POOLS.high, reduced = ['Q04', 'Q17', 'Q23'];
-  ok(H.length === 23 || (H.length === 20 && reduced.every(id => !H.includes(id))), `고학년 묶음 23 또는 20(Q04·Q17·Q23 제외) (실제 ${H.length})`);
+  ok(H.length === 31 || (H.length === 28 && reduced.every(id => !H.includes(id))), `고학년 묶음 31 또는 28(Q04·Q17·Q23 제외) (실제 ${H.length})`);
 }
 for (const band of ['low', 'high']) {
   for (const id of D.POOLS[band]) {

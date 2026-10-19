@@ -26,7 +26,7 @@ y = 130 + box.height + 30
 d.text((W // 2, y), url, fill='black', font=f_url, anchor='mm')
 notes = [
     '학교 Wi-Fi에서 카메라로 찍어 Safari로 연다 → 공유 → 홈 화면에 추가',
-    '홈 화면 아이콘을 인터넷이 될 때 한 번 실행 → «v1 · 웹 앱 · 오프라인 준비 ✓» 확인',
+    '홈 화면 아이콘을 인터넷이 될 때 한 번 실행 → «v2 · 웹 앱 · 오프라인 준비 ✓» 확인',
 ]
 for i, t in enumerate(notes):
     d.text((W // 2, y + 70 + i * 48), t, fill='#444444', font=f_note, anchor='mm')

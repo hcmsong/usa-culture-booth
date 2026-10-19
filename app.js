@@ -45,6 +45,12 @@
   const clearTimers = () => { timers.forEach(t => { clearTimeout(t); clearInterval(t); }); timers = []; };
   const choiceText = s => (C.SHOW_HANGUL_SOUND ? s : s.replace(/\s*\([^)]*\)\s*$/, ''));
   const factText = s => (C.SHOW_HANGUL_SOUND ? s : s.replace(/([A-Za-z])\([가-힣]+\)/g, '$1'));
+  // «George Washington (조지 워싱턴)» → 영어는 크게, 괄호 속 한글은 아랫줄 작게
+  const choiceHtml = s => {
+    const m = String(s).match(/^(.*\S)\s+\(([^)]*)\)$/);
+    if (!m || !C.SHOW_HANGUL_SOUND) return `<span>${esc(choiceText(s))}</span>`;
+    return `<span class="ct">${esc(m[1])}<small>${esc(m[2])}</small></span>`;
+  };
   const isStandalone = () => window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
 
   // 입력 막기: 확대·길게 누르기 메뉴·끌어서 새로 고침
@@ -269,7 +275,7 @@
     const q = Q[item.id];
     const n = item.order.length;
     const btns = item.order.map((orig, k) => `
-      <button class="btn-choice" data-k="${k}"><span class="mark s${k}"><b>${NUM[k]}</b><i>${SHAPE[k]}</i></span><span>${esc(choiceText(q.choices[orig]))}</span></button>`).join('');
+      <button class="btn-choice" data-k="${k}"><span class="mark s${k}"><b>${NUM[k]}</b><i>${SHAPE[k]}</i></span>${choiceHtml(q.choices[orig])}</button>`).join('');
     app.innerHTML = frame('q', `
       <div class="progress"><div class="num">${state.idx + 1} / ${N}</div><div class="dots">${dotsHtml(state.idx)}</div></div>
       <div class="q-main"><div class="q-emoji">${q.eq}</div>
@@ -296,7 +302,7 @@
     const ok = last && last.correct;
     const slot = item.order.indexOf(q.answer);
     const answerLine = !ok && C.SHOW_ANSWER_ON_WRONG
-      ? `<p class="fb-answer">정답은 ${NUM[slot]} ${esc(choiceText(q.choices[q.answer]))}</p>` : '';
+      ? `<p class="fb-answer">정답은 ${NUM[slot]} ${choiceHtml(q.choices[q.answer])}</p>` : '';
     app.innerHTML = frame('fb', `
       <div class="fb-band ${ok ? 'ok' : 'ng'}">
         <div class="fb-mark">${ok ? '⭕' : '❌'}</div>

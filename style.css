@@ -98,6 +98,8 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   font-size: clamp(28px, 4.6vmin, 44px); font-weight: 800; line-height: 1.2; word-break: keep-all;
 }
 .btn-choice:active { background: #E8EDFB; }
+.btn-choice .ct { display: flex; flex-direction: column; gap: 2px; }
+.btn-choice .ct small { font-size: 0.72em; font-weight: 700; color: #333; }
 .mark { flex: none; display: flex; flex-direction: column; align-items: center; line-height: 1; }
 .mark b { font-size: clamp(30px, 4.6vmin, 44px); }
 .mark i { font-style: normal; font-size: clamp(20px, 3vmin, 28px); }
@@ -119,7 +121,9 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   display: grid; place-items: center; font-size: clamp(120px, 17vmin, 160px); line-height: 1; box-shadow: 0 6px 0 rgba(0,0,0,.18); }
 .fb-word { font-size: clamp(54px, 9vmin, 88px); font-weight: 900; margin: 0; }
 .fb-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(10px, 2vmin, 20px); padding: 0 var(--pad); }
-.fb-answer { font-size: clamp(32px, 5.4vmin, 52px); font-weight: 900; margin: 0; }
+.fb-answer { font-size: clamp(32px, 5.4vmin, 52px); font-weight: 900; margin: 0; max-width: 1100px; word-break: keep-all; line-height: 1.25; text-align: center; }
+.fb-answer .ct { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: left; }
+.fb-answer .ct small { font-size: 0.66em; font-weight: 700; color: #333; }
 .fb-ea { font-size: clamp(64px, 11vmin, 110px); line-height: 1.05; }
 .fb-fact { font-size: clamp(28px, 4.4vmin, 42px); font-weight: 800; margin: 0; max-width: 1100px; word-break: keep-all; }
 .fb-next { font-size: clamp(20px, 3vmin, 28px); color: var(--muted); font-weight: 700; margin: 0 0 6px; }

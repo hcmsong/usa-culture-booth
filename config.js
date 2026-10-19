@@ -2,7 +2,7 @@
 // 아내 결정(기획서 §3.1)이 바뀌면 이 파일의 값만 고친다.
 // VERSION을 바꾸면 sw.js의 VERSION도 같은 값으로 바꾼다(tools/check.mjs가 검사).
 self.QUIZ_CONFIG = {
-  VERSION: 'v1',
+  VERSION: 'v2',
   TITLE: '미국 퀴즈 도전!',
   QUESTIONS_PER_ROUND: 10,
 
@@ -14,11 +14,11 @@ self.QUIZ_CONFIG = {
   SHOW_ANSWER_ON_WRONG: true,
   // 결정 ⑦: 한 판에 핼러윈 문항 최대 수(1 또는 2)
   HALLOWEEN_MAX: 2,
-  // 결정 ⑧: 영어 보기 뒤 한글 소리 «(헬로)» 표시
+  // 결정 ⑧: 영어 보기 뒤 괄호 한글 표시 — v2 아내 문항(Q32·Q33·Q35·Q40)은 괄호가 뜻·이름이라 false로 바꾸지 말 것(영어만 남아 저학년이 못 읽음)
   SHOW_HANGUL_SOUND: true,
-  // 결정 ②·③: 만점 미만 화면 안내 문구('' = 표시 안 함)
-  PARTICIPATION_MESSAGE: '참여 스티커를 받아 가세요!',
-  RETRY_MESSAGE: '다시 하고 싶으면 도우미 선생님께 물어보세요',
+  // 결정 ②·③(사용자 10/20 확정): 만점만 뽑기권, 참여 선물 없음, 못 맞히면 줄 맨 뒤에서 다시 도전
+  PARTICIPATION_MESSAGE: '',                    // '' = 표시 안 함
+  RETRY_MESSAGE: '다시 도전하려면 줄 맨 뒤에 서 주세요. 문제가 새로 섞여 나와요!',
   // 시작·만점 화면 문구(결정 ③ 1인 1장)
   START_LEAD: '10문제를 모두 맞히면 <b>뽑기권!</b>',   // HTML 허용(<b>는 빨간 강조)
   WIN_SUB: '🎟️ 뽑기권을 받아요!',
