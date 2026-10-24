@@ -1,6 +1,6 @@
 // 헤드리스 Chrome(CDP) e2e 시험 — v3 주제 선택형 퀴즈 앱
 // 사용: node tools/e2e.mjs <URL> <online|offline> [profileDir]
-// 환경변수: CHROME_EXTRA (Chrome 추가 인수)
+// 환경변수: CHROME_EXTRA (Chrome 추가 인수, 여러 개는 '||'로 구분 — 예 --host-resolver-rules=MAP host 127.0.0.1:9)
 import { spawn } from 'node:child_process';
 import { mkdtempSync } from 'node:fs';
 import os from 'node:os';
@@ -16,7 +16,7 @@ const chrome = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chro
   '--headless=new', `--remote-debugging-port=${PORT}`, `--user-data-dir=${PROFILE}`,
   '--no-first-run', '--no-default-browser-check', '--window-size=1180,820',
   '--disable-web-security', '--disable-features=TranslateUI',
-  ...(process.env.CHROME_EXTRA ? process.env.CHROME_EXTRA.split(' ') : []),
+  ...(process.env.CHROME_EXTRA ? process.env.CHROME_EXTRA.split('||').map(x => x.trim()).filter(Boolean) : []),  // 여러 개는 '||'로 구분(인수 안의 공백 유지)
   'about:blank',
 ], { stdio: 'ignore' });
 
