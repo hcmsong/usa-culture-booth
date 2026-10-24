@@ -2,8 +2,9 @@
 // 아내 결정(기획서 §3.1)이 바뀌면 이 파일의 값만 고친다.
 // VERSION을 바꾸면 sw.js의 VERSION도 같은 값으로 바꾼다(tools/check.mjs가 검사).
 self.QUIZ_CONFIG = {
-  VERSION: 'v2',
-  TITLE: '미국 퀴즈 도전!',
+  VERSION: 'v3',
+  TITLE: '어떤 퀴즈에 도전할까요?',
+  TOPIC_ORDER: ['usa', 'japan', 'korea', 'vietnam', 'world', 'animals', 'sports'],
   QUESTIONS_PER_ROUND: 10,
 
   // 결정 ①: 'choose' = 아이가 학년 버튼으로 고름 / 'common' = 학년 구분 없이 저학년 문제 묶음
@@ -52,7 +53,13 @@ self.QUIZ_CONFIG = {
     './index.html',
     './style.css',
     './config.js',
-    './questions.js',
+    './topics/usa.js',
+    './topics/japan.js',
+    './topics/korea.js',
+    './topics/vietnam.js',
+    './topics/world.js',
+    './topics/animals.js',
+    './topics/sports.js',
     './core.js',
     './app.js',
     './manifest.webmanifest',

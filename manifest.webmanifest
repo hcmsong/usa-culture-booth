@@ -1,6 +1,6 @@
 {
-  "name": "미국 문화 퀴즈",
-  "short_name": "미국 퀴즈",
+  "name": "퀴즈 도전",
+  "short_name": "퀴즈 도전",
   "lang": "ko",
   "start_url": "./",
   "scope": "./",

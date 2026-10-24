@@ -17,14 +17,17 @@
   }
 
   function groupsFor(cfg, D) {
-    return D.EXCLUSIVE.map(g => (g.halloween ? { ids: g.ids, max: cfg.HALLOWEEN_MAX } : g));
+    return (D.EXCLUSIVE || []).map(g => (g.halloween ? { ids: g.ids, max: cfg.HALLOWEEN_MAX } : g));
   }
 
   // 기본 세트(핼러윈 상한에 맞춰 교체 적용)
   function defaultIds(band, cfg, D) {
     const ids = D.DEFAULT_SETS[band].slice();
-    const hw = groupsFor(cfg, D).find(g => g.ids.includes('Q07'));
+    if (!D.HALLOWEEN_SWAP) return ids;
     const swaps = D.HALLOWEEN_SWAP[band] || {};
+    if (!Object.keys(swaps).length) return ids;
+    const hw = groupsFor(cfg, D).find(g => g.ids && g.ids.includes('Q07'));
+    if (!hw) return ids;
     for (const [from, to] of Object.entries(swaps)) {
       if (ids.filter(id => hw.ids.includes(id)).length <= hw.max) break;
       const i = ids.indexOf(from);

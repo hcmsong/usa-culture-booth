@@ -53,8 +53,8 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 
 /* S0 시작 */
 .flag { font-size: clamp(64px, 12vmin, 120px); line-height: 1; }
-.title { font-size: clamp(48px, 8.5vmin, 84px); font-weight: 900; margin: 0; letter-spacing: -1px; color: var(--navy); }
-.lead { font-size: clamp(26px, 4.2vmin, 40px); font-weight: 800; margin: 0; }
+.title { font-size: clamp(34px, 5.5vmin, 64px); font-weight: 900; margin: 0; letter-spacing: -1px; color: var(--navy); }
+.lead { font-size: clamp(22px, 3.4vmin, 36px); font-weight: 800; margin: 0; }
 .lead b { color: var(--red); }
 .btn-start {
   width: min(70vw, 760px); min-height: clamp(160px, 20vmin, 190px);
@@ -63,6 +63,37 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   box-shadow: 0 8px 0 #0E1F4D;
 }
 .btn-start:active { transform: translateY(6px); box-shadow: 0 2px 0 #0E1F4D; }
+
+/* S0 주제 그리드 */
+.topic-grid {
+  --tg: clamp(12px, 2vmin, 20px);
+  display: flex; flex-wrap: wrap; justify-content: center;   /* 가로 4+3, 마지막 줄 가운데 */
+  gap: var(--tg);
+  width: 100%;
+  max-width: 1200px;
+}
+.btn-topic {
+  flex: 0 0 calc((100% - 3 * var(--tg)) / 4);
+  min-height: clamp(140px, 18vmin, 200px);
+  border: 5px solid var(--line); border-radius: 28px; background: var(--card);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px; font-weight: 900; cursor: pointer;
+}
+.btn-topic:active { background: #EEF2FF; }
+.btn-topic .t-emoji { font-size: clamp(48px, 8vmin, 80px); line-height: 1.1; }
+.btn-topic .t-name { font-size: clamp(32px, 5vmin, 48px); }
+@media (orientation: portrait) {
+  .btn-topic { flex-basis: calc((100% - var(--tg)) / 2); }
+  .btn-topic { min-height: clamp(130px, 14vh, 180px); }
+}
+
+/* 주제 표시 라벨 */
+.topic-label {
+  font-size: clamp(22px, 3.5vmin, 34px); font-weight: 800; color: var(--muted);
+}
+.topic-label-sm {
+  font-size: clamp(18px, 2.6vmin, 26px); font-weight: 700; color: var(--muted);
+}
 
 /* S1 학년 선택 */
 .ask { font-size: clamp(40px, 7vmin, 64px); font-weight: 900; margin: 0; }
@@ -79,7 +110,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 
 /* S2 문제 */
 .screen.q { justify-content: flex-start; padding-top: max(24px, env(safe-area-inset-top)); }
-.progress { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 6px; }
+.progress { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 4px; }
 .progress .num { font-size: clamp(26px, 4vmin, 38px); font-weight: 900; color: var(--navy); }
 .dots { display: flex; gap: 10px; }
 .dots i { width: 18px; height: 18px; border-radius: 50%; border: 3px solid #9AA3B8; }

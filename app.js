@@ -1,8 +1,10 @@
-// 미국 문화 퀴즈 — 화면·상태(기획서 §5)
+// 퀴즈 부스 — 화면·상태 v3 (기획서 §5, 주제 선택형 멀티 주제)
 (() => {
   'use strict';
-  const C = self.QUIZ_CONFIG, D = self.QUIZ_DATA, Core = self.QuizCore;
-  const Q = Object.fromEntries(D.QUESTIONS.map(q => [q.id, q]));
+  const C = self.QUIZ_CONFIG;
+  const TOPICS = self.QUIZ_TOPICS;
+  const Core = self.QuizCore;
+  const TOPIC_ORDER = C.TOPIC_ORDER;
   const N = C.QUESTIONS_PER_ROUND;
   const NUM = ['①', '②', '③', '④'];
   const SHAPE = ['▲', '●', '■', '★'];
@@ -13,14 +15,43 @@
     get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* 저장 불가여도 진행 */ } },
   };
-  const freshCounters = () => ({ starts: 0, finishes: 0, perfects: 0, hist: new Array(N + 1).fill(0) });
+
+  // 주제별 문항 맵 (캐시)
+  function getQ(topic) {
+    const D = TOPICS && TOPICS[topic];
+    if (!D || !D.QUESTIONS) return {};
+    if (!D._qmap) D._qmap = Object.fromEntries(D.QUESTIONS.map(q => [q.id, q]));
+    return D._qmap;
+  }
+
+  const freshCounters = () => ({ starts: 0, finishes: 0, perfects: 0, hist: new Array(N + 1).fill(0), byTopic: {} });
   let counters = Object.assign(freshCounters(), store.get(KEY.counters, {}));
+  if (!counters.byTopic) counters.byTopic = {};
   let deviceNo = store.get(KEY.device, 0);
   let soundOn = store.get(KEY.sound, C.SOUND);
+
   // 저장된 판 복원: 판 번호가 다르거나, 구조가 맞지 않거나, 무입력 시간보다 오래된 진행 판은 버린다(만점 화면은 유지)
-  const validState = s => s && typeof s.screen === 'string' &&
-    (!s.round || (Array.isArray(s.round) && s.round.length === N && s.round.every(r => Q[r.id] && Array.isArray(r.order) && r.order.length === Q[r.id].choices.length))) &&
-    (!['question', 'feedback'].includes(s.screen) || (s.round && Number.isInteger(s.idx) && s.idx >= 0 && s.idx < N && Array.isArray(s.answers)));
+  const validState = s => {
+    if (!s || typeof s.screen !== 'string') return false;
+    if (s.screen === 'grade') {
+      if (!s.topic || !TOPICS[s.topic]) return false;
+    }
+    if (['question', 'feedback', 'perfect', 'result'].includes(s.screen)) {
+      if (!s.topic || !TOPICS[s.topic]) return false;
+    }
+    if (s.round) {
+      const D = s.topic && TOPICS[s.topic];
+      if (!D || !D.QUESTIONS || !D.QUESTIONS.length) return false;
+      const Qm = Object.fromEntries(D.QUESTIONS.map(q => [q.id, q]));
+      if (!(Array.isArray(s.round) && s.round.length === N &&
+            s.round.every(r => Qm[r.id] && Array.isArray(r.order) && r.order.length === Qm[r.id].choices.length))) return false;
+    }
+    if (['question', 'feedback'].includes(s.screen)) {
+      if (!(s.round && Number.isInteger(s.idx) && s.idx >= 0 && s.idx < N && Array.isArray(s.answers))) return false;
+    }
+    return true;
+  };
+
   let state = store.get(KEY.state, null);
   let discarded = false;
   if (!validState(state)) { state = { screen: 'start' }; discarded = true; }
@@ -130,7 +161,7 @@
     if (el) el.textContent = statusText();
   }
   const statusText = () => `${C.VERSION} · ${isStandalone() ? '웹 앱' : 'Safari'} · 오프라인 준비 ${offline.ready ? '✓' : offline.checked ? '✗' : '…'}`;
-  // 새 판이 설치되면(이미 옛 판으로 돌던 경우만) 시작·학년 화면에서 바로 새로 불러온다. 문제를 푸는 중이면 다음 시작 화면에서.
+  // 새 판이 설치되면(이미 옛 판으로 돌던 경우만) 시작·학년 화면에서 바로 새로 불러온다.
   let reloadPending = false;
   if ('serviceWorker' in navigator) {
     const hadController = !!navigator.serviceWorker.controller;
@@ -192,19 +223,25 @@
     if (reloadPending) { location.reload(); return; }
     render();
   }
-  function beginRound(band) {
+  function beginRound(topic, band) {
+    const D = TOPICS[topic];
+    if (!D || !D.QUESTIONS || !D.QUESTIONS.length || D.placeholder) { goStart(); return; }
     const prevAll = store.get(KEY.prev, {});
-    const { round } = Core.buildRound(band, prevAll[band] || null, Math.random, C, D);
-    prevAll[band] = round.map(r => r.id);
+    const prevKey = topic + ':' + band;
+    const { round } = Core.buildRound(band, prevAll[prevKey] || null, Math.random, C, D);
+    prevAll[prevKey] = round.map(r => r.id);
     store.set(KEY.prev, prevAll);
     counters.starts++;
+    if (!counters.byTopic[topic]) counters.byTopic[topic] = { starts: 0, finishes: 0, perfects: 0 };
+    counters.byTopic[topic].starts++;
     saveCounters();
-    state = { screen: 'question', band, round, idx: 0, answers: [], score: 0, roundNo: counters.starts };
+    state = { screen: 'question', topic, band, round, idx: 0, answers: [], score: 0, roundNo: counters.starts };
     saveState();
     render();
   }
   function answer(k) {
     if (state.screen !== 'question') return;
+    const Q = getQ(state.topic);
     const item = state.round[state.idx];
     const pick = item.order[k];
     const correct = pick === Q[item.id].answer;
@@ -220,6 +257,9 @@
     counters.hist[state.score] = (counters.hist[state.score] || 0) + 1;
     const perfect = state.score === N;
     if (perfect) counters.perfects++;
+    const bt = counters.byTopic[state.topic] = counters.byTopic[state.topic] || { starts: 0, finishes: 0, perfects: 0 };
+    bt.finishes++;
+    if (perfect) bt.perfects++;
     saveCounters();
     if (perfect) sfx('win');
     go(perfect ? 'perfect' : 'result', { finishedAt: Date.now() });
@@ -238,30 +278,42 @@
     bindBadge();
   }
 
+  // S0: 주제 고르기
   function viewStart() {
+    const topicBtns = TOPIC_ORDER.map(key => {
+      const T = TOPICS[key];
+      if (!T || !T.QUESTIONS || !T.QUESTIONS.length || T.placeholder) return '';
+      return `<button class="btn-topic" data-key="${esc(key)}"><span class="t-emoji">${T.emoji}</span><span class="t-name">${esc(T.name)}</span></button>`;
+    }).join('');
     app.innerHTML = frame('start', `
-      <div class="flag">🇺🇸</div>
       <h1 class="title">${esc(C.TITLE)}</h1>
       <p class="lead">${C.START_LEAD}</p>
-      <button class="btn-start" id="go">시작하기 ▶</button>
+      <div class="topic-grid">${topicBtns}</div>
       <div class="status">${esc(statusText())}</div>`);
-    tap(document.getElementById('go'), () => {
-      unlockAudio(); keepAwake();
-      if (C.GRADE_MODE === 'choose') go('grade'); else beginRound('low');
+    app.querySelectorAll('.btn-topic').forEach(b => {
+      tap(b, () => {
+        unlockAudio(); keepAwake();
+        const key = b.dataset.key;
+        if (C.GRADE_MODE === 'choose') go('grade', { topic: key }); else beginRound(key, 'low');
+      });
     });
     checkOffline();
     let n = 0;
     every(() => { if (++n <= 20 && !offline.ready) checkOffline(); }, 3000);
   }
 
+  // S1: 학년 고르기
   function viewGrade() {
+    const T = state.topic && TOPICS[state.topic];
+    if (!T) { goStart(); return; }
     app.innerHTML = frame('grade', `
+      <div class="topic-label">${T.emoji} ${esc(T.name)} 퀴즈</div>
       <h2 class="ask">몇 학년이에요?</h2>
       <div class="grades">
         <button class="btn-grade" data-band="low"><span class="em">🐣</span>1·2·3학년<small>동생도 여기!</small></button>
         <button class="btn-grade" data-band="high"><span class="em">🦅</span>4·5·6학년</button>
       </div>`);
-    app.querySelectorAll('.btn-grade').forEach(b => tap(b, () => beginRound(b.dataset.band)));
+    app.querySelectorAll('.btn-grade').forEach(b => tap(b, () => beginRound(state.topic, b.dataset.band)));
   }
 
   function dotsHtml(i) {
@@ -271,20 +323,28 @@
   }
 
   function viewQuestion() {
+    const D = TOPICS[state.topic];
+    const Q = getQ(state.topic);
+    if (!D || !state.round) { goStart(); return; }
+    const T = D;
     const item = state.round[state.idx];
     const q = Q[item.id];
+    if (!q) { goStart(); return; }
     const n = item.order.length;
     const btns = item.order.map((orig, k) => `
       <button class="btn-choice" data-k="${k}"><span class="mark s${k}"><b>${NUM[k]}</b><i>${SHAPE[k]}</i></span>${choiceHtml(q.choices[orig])}</button>`).join('');
     app.innerHTML = frame('q', `
-      <div class="progress"><div class="num">${state.idx + 1} / ${N}</div><div class="dots">${dotsHtml(state.idx)}</div></div>
+      <div class="progress">
+        <div class="topic-label-sm">${T.emoji} ${esc(T.name)}</div>
+        <div class="num">${state.idx + 1} / ${N}</div>
+        <div class="dots">${dotsHtml(state.idx)}</div>
+      </div>
       <div class="q-main"><div class="q-emoji">${q.eq}</div>
       <p class="q-text">${esc(q.q)}</p></div>
       <div class="choices n${n}">${btns}</div>
       ${C.TTS ? '<button class="tts" id="tts" aria-label="읽어 주기">🔊</button>' : ''}`);
     app.querySelectorAll('.btn-choice').forEach(b => {
       const k = Number(b.dataset.k);
-      // 손가락을 조금 끌어도 버튼 안에서 떼면 확정(아이 터치). click은 마우스·보조 경로.
       b.addEventListener('pointerup', e => {
         if (now() < guardUntil) return;
         const r = b.getBoundingClientRect();
@@ -296,8 +356,10 @@
   }
 
   function viewFeedback() {
+    const Q = getQ(state.topic);
     const item = state.round[state.idx];
     const q = Q[item.id];
+    if (!q) { goStart(); return; }
     const last = state.answers[state.answers.length - 1];
     const ok = last && last.correct;
     const slot = item.order.indexOf(q.answer);
@@ -324,7 +386,9 @@
   }
 
   function confettiHtml() {
-    const icons = ['⭐', '🇺🇸', '🎉', '✨', '🌟'];
+    const T = state.topic && TOPICS[state.topic];
+    const topicEmoji = T ? T.emoji : '🎉';
+    const icons = [topicEmoji, '⭐', '🎉', '✨', '🌟'];
     let h = '';
     for (let i = 0; i < 26; i++) {
       h += `<span style="left:${(i * 37) % 100}%;animation-delay:${(i % 9) * 0.18}s">${icons[i % icons.length]}</span>`;
@@ -334,9 +398,11 @@
   const clockText = () => new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
 
   function viewPerfect() {
+    const T = state.topic && TOPICS[state.topic];
+    const topicName = T ? T.name : '';
     app.innerHTML = frame('perfect', `
       ${confettiHtml()}
-      <h1 class="big-win">10문제 모두 정답! 🎉</h1>
+      <h1 class="big-win">${esc(topicName)} 퀴즈 10문제 모두 정답! 🎉</h1>
       <p class="win-sub">${esc(C.WIN_SUB)}</p>
       <p class="win-tell">선생님께 이 화면을 보여 주세요</p>
       ${C.WIN_NOTE ? `<p class="win-note">${esc(C.WIN_NOTE)}</p>` : ''}
@@ -353,7 +419,7 @@
 
   function viewResult() {
     const s = state.score;
-    const cheer = s >= N - 2 ? '정말 잘했어요! 거의 다 맞혔어요!' : s >= Math.ceil(N / 2) ? '잘했어요! 미국 박사에 한 걸음 더!' : '도전해 줘서 고마워요!';
+    const cheer = s >= N - 2 ? '정말 잘했어요! 거의 다 맞혔어요!' : s >= Math.ceil(N / 2) ? '잘했어요! 한 걸음 더!' : '도전해 줘서 고마워요!';
     const notes = [C.PARTICIPATION_MESSAGE, C.RETRY_MESSAGE].filter(Boolean).map(t => `<p class="note">${esc(t)}</p>`).join('');
     app.innerHTML = frame('result', `
       <p class="score">${N}문제 중 <b>${s}개</b> 정답!</p>
@@ -377,7 +443,6 @@
 
   // ---------- 직원 메뉴 ----------
   let menuTimer = 0;
-  // 직원 창을 여는 동안 아래 화면 타이머를 멈추고, 닫으면 지금 화면을 다시 그린다(정답 화면 4초·결과 12초는 처음부터)
   function closeOverlay() {
     if (overlay.hidden) return;
     overlay.hidden = true; overlay.innerHTML = ''; clearTimeout(menuTimer);
@@ -397,7 +462,7 @@
       <button data-d="x">취소</button><button data-d="0">0</button><button data-d="b">지움</button></div></div>`;
     armMenuIdle();
     const pd = document.getElementById('pd');
-    const show = () => { pd.textContent = typed ? '●'.repeat(typed.length) : ' '; };
+    const show = () => { pd.textContent = typed ? '●'.repeat(typed.length) : ' '; };
     overlay.querySelectorAll('[data-d]').forEach(b => b.addEventListener('click', () => {
       const d = b.dataset.d;
       if (d === 'x') return closeOverlay();
@@ -419,9 +484,16 @@
     let armed = false;
     const draw = () => {
       const h = counters.hist.map((c, i) => `${i}점 ${c}`).join(' · ');
+      const byTopicHtml = TOPIC_ORDER.map(key => {
+        const T = TOPICS[key];
+        if (!T || T.placeholder || !T.QUESTIONS || !T.QUESTIONS.length) return '';
+        const bt = (counters.byTopic || {})[key] || { starts: 0, finishes: 0, perfects: 0 };
+        return `<small>${T.emoji} ${esc(T.name)}: 시작 ${bt.starts} · 만점 ${bt.perfects}</small>`;
+      }).filter(Boolean).join('');
       overlay.innerHTML = `<div class="panel">
         <h2>직원 메뉴 — ${deviceNo ? deviceNo + '번 기기' : '기기 번호 없음'}</h2>
         <div class="stats">시작 ${counters.starts} · 완주 ${counters.finishes} · 만점 ${counters.perfects}<small>점수 분포: ${h}</small>
+          ${byTopicHtml}
           <small>${esc(statusText())}</small></div>
         <div class="row"><button id="m-home">지금 판 처음으로</button><button id="m-sound" class="${soundOn ? 'on' : ''}">소리 ${soundOn ? '켜짐' : '꺼짐'}</button></div>
         <div class="label">기기 번호</div>
